@@ -14,3 +14,5 @@ referencing==0.36.2
 rpds-py==0.25.1
 sqlparse==0.5.3
 uritemplate==4.1.1
+
+django-cors-headers==4.9.0
