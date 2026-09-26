@@ -115,6 +115,7 @@ LANGUAGE_CODE = 'en-us'
 LANGUAGES = [
     ('en', "English"),
     ('ru', 'Русский'),
+    ('uz', 'O\'zbek'),
 ]
 LOCALE_PATHS = [
     os.path.join(BASE_DIR / 'locale'),
@@ -124,9 +125,10 @@ PARLER_LANGUAGES = {
     None: (
         {'code': 'en', },
         {'code': 'ru', },
+        {'code': 'uz', },
     ),
     'default': {
-        'fallbacks': ['en', 'ru'],
+        'fallbacks': ['en', 'ru', 'uz'],
         'hide_untranslated': True,
     }
 }
