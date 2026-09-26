@@ -32,7 +32,7 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
             type=OpenApiTypes.STR,
             location=OpenApiParameter.QUERY,
             required=False,
-            description='Language code (en, ru)'
+            description='Language code (en, ru, uz)'
         )
     ]
 )

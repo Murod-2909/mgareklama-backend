@@ -29,10 +29,11 @@ class PartnerModelSerializer(ModelSerializer):
 
 class ServiceModelSerializer(ModelSerializer):
     title = CharField(read_only=True)
+    description = CharField(read_only=True)
 
     class Meta:
         model = Service
-        fields = 'title', 'image'
+        fields = 'id', 'title', 'description', 'image'
 
 
 class ContactFormModelSerializers(ModelSerializer):

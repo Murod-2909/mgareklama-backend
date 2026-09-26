@@ -83,7 +83,8 @@ class Partner(Model):
 
 class Service(TranslatableModel):
     translations = TranslatedFields(
-        title = CharField(max_length=120, verbose_name=_("Title"))
+        title = CharField(max_length=120, verbose_name=_("Title")),
+        description = TextField(verbose_name=_("Description"), blank=True, default='')
     )
 
     image = ImageField(upload_to='services-icon/%Y/%m/%d', verbose_name=_("Icon"), null=True, blank=True)
