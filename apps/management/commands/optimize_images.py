@@ -1,11 +1,22 @@
 from django.core.management.base import BaseCommand
 
 from apps.image_utils import build_variants
-from apps.models import Gallery, GalleryGroup, ServiceWork
+from apps.models import Banner, Gallery, GalleryGroup, Partner, ServiceWork, SiteSetting
+
+
+MODELS = (Gallery, GalleryGroup, ServiceWork, Partner, Banner, SiteSetting)
+
+
+def is_referenced(name):
+    for model in MODELS:
+        for field in (model.image_field, 'thumbnail'):
+            if model.objects.filter(**{field: name}).exists():
+                return True
+    return False
 
 
 class Command(BaseCommand):
-    help = "Convert existing Gallery/GalleryGroup/ServiceWork images to optimized WebP, create thumbnails, delete old files."
+    help = "Convert existing Gallery/GalleryGroup/ServiceWork/Partner/Banner/SiteSetting images to optimized WebP, create thumbnails, delete old files."
 
     def add_arguments(self, parser):
         parser.add_argument('--force', action='store_true', help="Reprocess images that are already optimized.")
@@ -14,21 +25,22 @@ class Command(BaseCommand):
         done = skipped = failed = 0
         saved_bytes = 0
 
-        for model in (Gallery, GalleryGroup, ServiceWork):
+        for model in MODELS:
             for obj in model.objects.iterator():
-                if not obj.image:
+                source = obj.source_image
+                if not source:
                     continue
-                optimized = obj.image.name.lower().endswith('.webp') and obj.thumbnail
+                optimized = source.name.lower().endswith('.webp') and obj.thumbnail
                 if optimized and not options['force']:
                     skipped += 1
                     continue
 
-                old_name = obj.image.name
+                old_name = source.name
                 old_thumb = obj.thumbnail.name if obj.thumbnail else None
                 try:
-                    old_size = obj.image.size
-                    with obj.image.open('rb') as f:
-                        main, thumb = build_variants(f)
+                    old_size = source.size
+                    with source.open('rb') as f:
+                        main, thumb = build_variants(f, obj.main_max_side)
                 except Exception as exc:
                     failed += 1
                     self.stderr.write(f"{model.__name__} #{obj.pk} {old_name}: {exc}")
@@ -37,9 +49,9 @@ class Command(BaseCommand):
                 obj.apply_variants(main, thumb, old_name)
                 obj.save()
 
-                storage = obj.image.storage
+                storage = obj.source_image.storage
                 for stale in (old_name, old_thumb):
-                    if stale and stale not in (obj.image.name, obj.thumbnail.name):
+                    if stale and not is_referenced(stale):
                         storage.delete(stale)
 
                 done += 1

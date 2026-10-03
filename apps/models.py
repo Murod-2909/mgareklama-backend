@@ -6,7 +6,9 @@ from parler.models import TranslatableModel, TranslatedFields
 from apps.image_utils import OptimizedImageModel
 
 
-class Banner(Model):
+class Banner(OptimizedImageModel):
+    main_max_side = 1920
+
     image = ImageField(upload_to='banner', verbose_name=_("Image"))
 
     class Meta:
@@ -36,7 +38,10 @@ class GalleryGroup(OptimizedImageModel):
         return f"Image for Gallery {self.gallery.pk}"
 
 
-class SiteSetting(Model):
+class SiteSetting(OptimizedImageModel):
+    image_field = 'banner'
+    main_max_side = 1920
+
     phone_number = CharField(max_length=11, verbose_name=_("Phone Number"))
     email = EmailField(max_length=100, verbose_name=_("Email"))
     address = CharField(max_length=120, verbose_name=_("Address"))
@@ -71,7 +76,7 @@ class ContactForm(Model):
 
 
 
-class Partner(Model):
+class Partner(OptimizedImageModel):
     image = ImageField(upload_to='partners/%Y/%m/%d', verbose_name=_("Image"))
     url = URLField(max_length=100, verbose_name=_("URL"), null=True, blank=True)
 
