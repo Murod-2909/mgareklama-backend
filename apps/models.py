@@ -3,6 +3,8 @@ from django.db.models import Model, ImageField, DateTimeField, CharField, EmailF
 from django.utils.translation import gettext_lazy as _
 from parler.models import TranslatableModel, TranslatedFields
 
+from apps.image_utils import OptimizedImageModel
+
 
 class Banner(Model):
     image = ImageField(upload_to='banner', verbose_name=_("Image"))
@@ -12,7 +14,7 @@ class Banner(Model):
         verbose_name_plural = _("Banners")
 
 
-class Gallery(Model):
+class Gallery(OptimizedImageModel):
     image = ImageField(upload_to='images/%Y/%m/%d', verbose_name=_("Image"))
 
     class Meta:
@@ -22,7 +24,7 @@ class Gallery(Model):
     def __str__(self):
         return f"Gallery {self.pk}"
 
-class GalleryGroup(Model):
+class GalleryGroup(OptimizedImageModel):
     image = ImageField(upload_to='images/%Y/%m/%d', verbose_name=_("Image"))
     gallery = ForeignKey('apps.Gallery', verbose_name=_("Gallery"), related_name='same_images', on_delete=CASCADE)
 
@@ -94,7 +96,7 @@ class Service(TranslatableModel):
         verbose_name_plural = _("Services")
 
 
-class ServiceWork(Model):
+class ServiceWork(OptimizedImageModel):
     service = ForeignKey('apps.Service', verbose_name=_("Service"), related_name='works', on_delete=CASCADE)
     image = ImageField(upload_to='service-works/%Y/%m/%d/', verbose_name=_("Image"))
     order = PositiveIntegerField(default=0, verbose_name=_("Order"))
