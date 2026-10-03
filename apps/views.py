@@ -1,9 +1,11 @@
+from django.conf import settings
 from django.utils import translation
 from rest_framework.generics import ListAPIView, RetrieveAPIView, CreateAPIView
 
-from apps.models import Gallery, SiteSetting, Partner, Service, ContactForm, ClientEmail
+from apps.models import Gallery, SiteSetting, Partner, Service, ContactForm, ClientEmail, Project
 from apps.serializers import SiteSettingSerializer, PartnerModelSerializer, \
-    ServiceModelSerializer, ContactFormModelSerializers, ClientEmailModelSerializers, GallerySerializer
+    ServiceModelSerializer, ContactFormModelSerializers, ClientEmailModelSerializers, GallerySerializer, \
+    ProjectListSerializer, ProjectDetailSerializer
 
 
 class GalleryListAPIView(ListAPIView):
@@ -57,3 +59,36 @@ class ContactFormCreateAPIView(CreateAPIView):
 class EmailCreateAPIView(CreateAPIView):
     queryset = ClientEmail.objects.all()
     serializer_class = ClientEmailModelSerializers
+
+
+LANG_PARAMETER = OpenApiParameter(
+    name='lang',
+    type=OpenApiTypes.STR,
+    location=OpenApiParameter.QUERY,
+    required=False,
+    description='Language code (en, ru, uz). Projects without a translation in this language are hidden.'
+)
+
+
+class ProjectQuerysetMixin:
+    def get_queryset(self):
+        lang = self.request.GET.get('lang') or 'en'
+        if lang not in dict(settings.LANGUAGES):
+            lang = 'en'
+        translation.activate(lang)
+        self.request.LANGUAGE_CODE = lang
+
+        return (Project.objects.filter(is_published=True)
+                .active_translations(lang)
+                .prefetch_related('photos', 'translations'))
+
+
+@extend_schema(parameters=[LANG_PARAMETER])
+class ProjectListAPIView(ProjectQuerysetMixin, ListAPIView):
+    serializer_class = ProjectListSerializer
+
+
+@extend_schema(parameters=[LANG_PARAMETER])
+class ProjectDetailAPIView(ProjectQuerysetMixin, RetrieveAPIView):
+    serializer_class = ProjectDetailSerializer
+    lookup_field = 'slug'
