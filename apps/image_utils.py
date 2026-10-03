@@ -19,14 +19,14 @@ def _encode_webp(im, max_side, quality):
     return buffer.getvalue()
 
 
-def build_variants(fileobj):
+def build_variants(fileobj, main_max_side=MAIN_MAX_SIDE):
     with Image.open(fileobj) as im:
         im = ImageOps.exif_transpose(im)
         if im.mode in ('P', 'LA', 'PA'):
             im = im.convert('RGBA')
         elif im.mode not in ('RGB', 'RGBA'):
             im = im.convert('RGB')
-        main = _encode_webp(im, MAIN_MAX_SIDE, MAIN_QUALITY)
+        main = _encode_webp(im, main_max_side, MAIN_QUALITY)
         thumb = _encode_webp(im, THUMB_MAX_SIDE, THUMB_QUALITY)
     return main, thumb
 
@@ -38,18 +38,26 @@ def webp_name(name):
 class OptimizedImageModel(Model):
     thumbnail = ImageField(upload_to='thumbs/%Y/%m/%d', blank=True, editable=False)
 
+    image_field = 'image'
+    main_max_side = MAIN_MAX_SIDE
+
     class Meta:
         abstract = True
 
+    @property
+    def source_image(self):
+        return getattr(self, self.image_field)
+
     def apply_variants(self, main, thumb, source_name):
         name = webp_name(source_name)
-        self.image.save(name, ContentFile(main), save=False)
+        self.source_image.save(name, ContentFile(main), save=False)
         self.thumbnail.save(name, ContentFile(thumb), save=False)
 
     def save(self, *args, **kwargs):
         # FieldFile._committed is False only for a freshly assigned/uploaded file
-        if self.image and not self.image._committed:
-            self.image.file.seek(0)
-            main, thumb = build_variants(self.image.file)
-            self.apply_variants(main, thumb, self.image.name)
+        source = self.source_image
+        if source and not source._committed:
+            source.file.seek(0)
+            main, thumb = build_variants(source.file, self.main_max_side)
+            self.apply_variants(main, thumb, source.name)
         super().save(*args, **kwargs)
