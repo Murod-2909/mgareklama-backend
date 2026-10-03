@@ -92,3 +92,7 @@ class ProjectListAPIView(ProjectQuerysetMixin, ListAPIView):
 class ProjectDetailAPIView(ProjectQuerysetMixin, RetrieveAPIView):
     serializer_class = ProjectDetailSerializer
     lookup_field = 'slug'
+
+    def get_object(self):
+        self.kwargs['slug'] = self.kwargs['slug'].lower()
+        return super().get_object()

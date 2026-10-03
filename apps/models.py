@@ -183,9 +183,12 @@ class Project(OptimizedImageModel, TranslatableModel):
     def __str__(self):
         return self.slug
 
+    def clean(self):
+        super().clean()
+        self.slug = slugify(self.slug)
+
     def save(self, *args, **kwargs):
-        if not self.slug:
-            self.slug = f"{TEMP_SLUG_PREFIX}{uuid.uuid4().hex[:12]}"
+        self.slug = slugify(self.slug) or f"{TEMP_SLUG_PREFIX}{uuid.uuid4().hex[:12]}"
         super().save(*args, **kwargs)
 
 
