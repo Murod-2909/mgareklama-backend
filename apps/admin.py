@@ -4,7 +4,7 @@ from django.shortcuts import redirect
 from django.urls import reverse
 from parler.admin import TranslatableAdmin
 
-from apps.models import Gallery, SiteSetting, ContactForm, Partner, Service, ClientEmail, GalleryGroup
+from apps.models import Gallery, SiteSetting, ContactForm, Partner, Service, ServiceWork, ClientEmail, GalleryGroup
 
 
 @admin.register(SiteSetting)
@@ -34,9 +34,16 @@ class PartnerAdmin(admin.ModelAdmin):
     pass
 
 
+class ServiceWorkInline(admin.TabularInline):
+    model = ServiceWork
+    extra = 3
+    fields = ['image', 'order']
+
+
 @admin.register(Service)
 class ServiceTranslatableAdmin(TranslatableAdmin):
     list_display = 'title',
+    inlines = ServiceWorkInline,
 
 
 @admin.register(ClientEmail)

@@ -46,7 +46,7 @@ class ServiceListAPIView(ListAPIView):
         self.request.LANGUAGE_CODE = lang
 
         queryset = super().get_queryset()
-        return queryset.active_translations(lang)
+        return queryset.active_translations(lang).prefetch_related('works')
 
 
 class ContactFormCreateAPIView(CreateAPIView):

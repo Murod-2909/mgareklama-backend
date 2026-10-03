@@ -1,6 +1,6 @@
 from rest_framework.serializers import ModelSerializer, CharField
 
-from apps.models import Gallery, SiteSetting, Partner, Service, ContactForm, ClientEmail, GalleryGroup
+from apps.models import Gallery, SiteSetting, Partner, Service, ServiceWork, ContactForm, ClientEmail, GalleryGroup
 
 
 class GalleryGroupSerializer(ModelSerializer):
@@ -27,13 +27,20 @@ class PartnerModelSerializer(ModelSerializer):
         fields = '__all__'
 
 
+class ServiceWorkSerializer(ModelSerializer):
+    class Meta:
+        model = ServiceWork
+        fields = 'id', 'image'
+
+
 class ServiceModelSerializer(ModelSerializer):
     title = CharField(read_only=True)
     description = CharField(read_only=True)
+    works = ServiceWorkSerializer(many=True, read_only=True)
 
     class Meta:
         model = Service
-        fields = 'id', 'title', 'description', 'image'
+        fields = 'id', 'title', 'description', 'image', 'works'
 
 
 class ContactFormModelSerializers(ModelSerializer):

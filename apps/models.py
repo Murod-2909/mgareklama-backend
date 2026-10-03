@@ -1,5 +1,5 @@
 from django.db.models import Model, ImageField, DateTimeField, CharField, EmailField, URLField, TextField, ForeignKey, \
-    CASCADE
+    CASCADE, PositiveIntegerField
 from django.utils.translation import gettext_lazy as _
 from parler.models import TranslatableModel, TranslatedFields
 
@@ -92,6 +92,20 @@ class Service(TranslatableModel):
     class Meta:
         verbose_name = _("Service")
         verbose_name_plural = _("Services")
+
+
+class ServiceWork(Model):
+    service = ForeignKey('apps.Service', verbose_name=_("Service"), related_name='works', on_delete=CASCADE)
+    image = ImageField(upload_to='service-works/%Y/%m/%d/', verbose_name=_("Image"))
+    order = PositiveIntegerField(default=0, verbose_name=_("Order"))
+
+    class Meta:
+        ordering = ['order', 'id']
+        verbose_name = _("Service Work")
+        verbose_name_plural = _("Service Works")
+
+    def __str__(self):
+        return f"Work {self.pk} for service {self.service_id}"
 
 
 
