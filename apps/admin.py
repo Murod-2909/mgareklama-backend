@@ -1,10 +1,11 @@
 from django.contrib import admin
 from django.contrib.auth.models import Group
 from django.shortcuts import redirect
+from django.utils.html import format_html
 from django.urls import reverse
 from parler.admin import TranslatableAdmin
 
-from apps.models import Gallery, SiteSetting, ContactForm, Partner, Service, ServiceWork, ClientEmail, GalleryGroup
+from apps.models import Gallery, SiteSetting, ContactForm, Partner, Service, ServiceWork, ClientEmail, GalleryGroup, Project, ProjectPhoto
 
 
 @admin.register(SiteSetting)
@@ -44,6 +45,28 @@ class ServiceWorkInline(admin.TabularInline):
 class ServiceTranslatableAdmin(TranslatableAdmin):
     list_display = 'title',
     inlines = ServiceWorkInline,
+
+
+class ProjectPhotoInline(admin.TabularInline):
+    model = ProjectPhoto
+    extra = 3
+    fields = ['image', 'order']
+
+
+@admin.register(Project)
+class ProjectTranslatableAdmin(TranslatableAdmin):
+    list_display = 'cover_preview', 'title', 'category', 'year', 'is_published', 'order'
+    list_display_links = 'cover_preview', 'title'
+    list_editable = 'is_published', 'order'
+    list_filter = 'category', 'is_published'
+    inlines = ProjectPhotoInline,
+
+    @admin.display(description="Cover")
+    def cover_preview(self, obj):
+        image = obj.thumbnail or obj.cover
+        if not image:
+            return "-"
+        return format_html('<img src="{}" style="height:48px;border-radius:4px">', image.url)
 
 
 @admin.register(ClientEmail)

@@ -1,5 +1,10 @@
+import uuid
+
 from django.db.models import Model, ImageField, DateTimeField, CharField, EmailField, URLField, TextField, ForeignKey, \
-    CASCADE, PositiveIntegerField
+    CASCADE, PositiveIntegerField, PositiveSmallIntegerField, SlugField, BooleanField
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 from parler.models import TranslatableModel, TranslatedFields
 
@@ -138,3 +143,76 @@ class ClientEmail(Model):
     def __str__(self):
         return self.email
 
+
+
+TEMP_SLUG_PREFIX = 'tmp-'
+
+
+class Project(OptimizedImageModel, TranslatableModel):
+    CATEGORY_CHOICES = [
+        ('hotel', _("Hotel")),
+        ('museum', _("Museum")),
+        ('outdoor', _("Outdoor")),
+        ('interior', _("Interior")),
+        ('corporate', _("Corporate")),
+        ('facade', _("Facade")),
+    ]
+
+    translations = TranslatedFields(
+        title=CharField(max_length=120, verbose_name=_("Title")),
+        location=CharField(max_length=120, blank=True, default='', verbose_name=_("Location")),
+        description=TextField(blank=True, default='', verbose_name=_("Description")),
+        materials=TextField(blank=True, default='', verbose_name=_("Materials")),
+    )
+
+    image_field = 'cover'
+
+    slug = SlugField(unique=True, blank=True, verbose_name=_("Slug"),
+                     help_text=_("Leave empty to generate it from the English title."))
+    cover = ImageField(upload_to='projects/%Y/%m/%d', verbose_name=_("Cover"))
+    year = PositiveSmallIntegerField(null=True, blank=True, verbose_name=_("Year"))
+    category = CharField(max_length=20, choices=CATEGORY_CHOICES, default='outdoor', verbose_name=_("Category"))
+    is_published = BooleanField(default=False, verbose_name=_("Published"))
+    order = PositiveIntegerField(default=0, verbose_name=_("Order"))
+
+    class Meta:
+        ordering = ['order', 'id']
+        verbose_name = _("Project")
+        verbose_name_plural = _("Projects")
+
+    def __str__(self):
+        return self.slug
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = f"{TEMP_SLUG_PREFIX}{uuid.uuid4().hex[:12]}"
+        super().save(*args, **kwargs)
+
+
+@receiver(post_save, sender=Project._parler_meta.root_model)
+def set_project_slug_from_english_title(sender, instance, **kwargs):
+    project = instance.master
+    if instance.language_code != 'en' or not project.slug.startswith(TEMP_SLUG_PREFIX):
+        return
+    base = slugify(instance.title)[:45]
+    if not base:
+        return
+    slug, n = base, 2
+    while Project.objects.filter(slug=slug).exclude(pk=project.pk).exists():
+        slug, n = f"{base}-{n}", n + 1
+    Project.objects.filter(pk=project.pk).update(slug=slug)
+    project.slug = slug
+
+
+class ProjectPhoto(OptimizedImageModel):
+    project = ForeignKey('apps.Project', verbose_name=_("Project"), related_name='photos', on_delete=CASCADE)
+    image = ImageField(upload_to='project-photos/%Y/%m/%d', verbose_name=_("Image"))
+    order = PositiveIntegerField(default=0, verbose_name=_("Order"))
+
+    class Meta:
+        ordering = ['order', 'id']
+        verbose_name = _("Project Photo")
+        verbose_name_plural = _("Project Photos")
+
+    def __str__(self):
+        return f"Photo {self.pk} for project {self.project_id}"
