@@ -6,14 +6,14 @@ from apps.models import Gallery, SiteSetting, Partner, Service, ServiceWork, Con
 class GalleryGroupSerializer(ModelSerializer):
     class Meta:
         model = GalleryGroup
-        fields = ['id', 'image']
+        fields = ['id', 'image', 'thumbnail']
 
 class GallerySerializer(ModelSerializer):
     same_images = GalleryGroupSerializer(many=True, read_only=True)
 
     class Meta:
         model = Gallery
-        fields = ['id', 'image', 'same_images']
+        fields = ['id', 'image', 'thumbnail', 'same_images']
 
 class SiteSettingSerializer(ModelSerializer):
     class Meta:
@@ -30,7 +30,7 @@ class PartnerModelSerializer(ModelSerializer):
 class ServiceWorkSerializer(ModelSerializer):
     class Meta:
         model = ServiceWork
-        fields = 'id', 'image'
+        fields = 'id', 'image', 'thumbnail'
 
 
 class ServiceModelSerializer(ModelSerializer):

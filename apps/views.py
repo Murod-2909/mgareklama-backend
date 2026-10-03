@@ -7,7 +7,7 @@ from apps.serializers import SiteSettingSerializer, PartnerModelSerializer, \
 
 
 class GalleryListAPIView(ListAPIView):
-    queryset = Gallery.objects.all()
+    queryset = Gallery.objects.prefetch_related('same_images').order_by('-id')
     serializer_class = GallerySerializer
 
 
