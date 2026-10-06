@@ -43,7 +43,7 @@ class ServiceWorkInline(admin.TabularInline):
 
 @admin.register(Service)
 class ServiceTranslatableAdmin(TranslatableAdmin):
-    list_display = 'title',
+    list_display = 'title', 'slug'
     inlines = ServiceWorkInline,
 
 
