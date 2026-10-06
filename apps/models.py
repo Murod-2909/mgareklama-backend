@@ -82,6 +82,8 @@ class ContactForm(Model):
 
 
 class Partner(OptimizedImageModel):
+    trim_logo = True
+
     image = ImageField(upload_to='partners/%Y/%m/%d', verbose_name=_("Image"))
     url = URLField(max_length=100, verbose_name=_("URL"), null=True, blank=True)
 
@@ -93,17 +95,28 @@ class Partner(OptimizedImageModel):
         return self.url
 
 
-class Service(TranslatableModel):
+class Service(OptimizedImageModel, TranslatableModel):
+    main_max_side = 1200
+
     translations = TranslatedFields(
         title = CharField(max_length=120, verbose_name=_("Title")),
         description = TextField(verbose_name=_("Description"), blank=True, default='')
     )
 
+    slug = SlugField(max_length=80, unique=True, null=True, blank=True, verbose_name=_("Slug"))
     image = ImageField(upload_to='services-icon/%Y/%m/%d', verbose_name=_("Icon"), null=True, blank=True)
 
     class Meta:
         verbose_name = _("Service")
         verbose_name_plural = _("Services")
+
+    def clean(self):
+        super().clean()
+        self.slug = (slugify(self.slug) if self.slug else '') or None
+
+    def save(self, *args, **kwargs):
+        self.slug = (slugify(self.slug) if self.slug else '') or None
+        super().save(*args, **kwargs)
 
 
 class ServiceWork(OptimizedImageModel):

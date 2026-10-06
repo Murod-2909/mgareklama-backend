@@ -41,7 +41,7 @@ class ServiceModelSerializer(ModelSerializer):
 
     class Meta:
         model = Service
-        fields = 'id', 'title', 'description', 'image', 'works'
+        fields = 'id', 'slug', 'title', 'description', 'image', 'thumbnail', 'works'
 
 
 class ContactFormModelSerializers(ModelSerializer):
