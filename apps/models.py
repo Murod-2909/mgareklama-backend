@@ -1,5 +1,6 @@
 import uuid
 
+from django.core.validators import RegexValidator
 from django.db.models import Model, ImageField, DateTimeField, CharField, EmailField, URLField, TextField, ForeignKey, \
     CASCADE, PositiveIntegerField, PositiveSmallIntegerField, SlugField, BooleanField
 from django.db.models.signals import post_delete, post_save
@@ -71,10 +72,13 @@ class SiteSetting(OptimizedImageModel):
 class ContactForm(Model):
     name = CharField(max_length=100, verbose_name=_("Name"))
     email = EmailField(max_length=100, verbose_name=_("Email"))
-    phone = CharField(max_length=12, verbose_name=_("Phone Number"))
-    subject = CharField(max_length=100, verbose_name=_("Subject"))
+    phone = CharField(max_length=32, blank=True, default='', verbose_name=_("Phone Number"),
+                      validators=[RegexValidator(r'^[0-9\s+\-()]*$', _("Enter a valid phone number."))])
+    subject = CharField(max_length=120, blank=True, default='', verbose_name=_("Subject"))
     message = TextField(verbose_name=_("Message"))
     created = DateTimeField(auto_now_add=True, verbose_name=_("Created At"))
+    is_processed = BooleanField(default=False, verbose_name=_("Processed"))
+    note = TextField(blank=True, default='', verbose_name=_("Note"))
 
     class Meta:
         verbose_name = _("Contact Form")
@@ -149,7 +153,7 @@ class ClientComment(Model):
 
 
 class ClientEmail(Model):
-    email = EmailField(max_length=100, verbose_name=_("Email"))
+    email = EmailField(max_length=100, unique=True, verbose_name=_("Email"))
 
     class Meta:
         verbose_name = _("Client Email")

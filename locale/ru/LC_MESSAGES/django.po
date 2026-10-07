@@ -37,3 +37,12 @@ msgstr "Видео"
 msgid "Preview"
 msgstr "Предпросмотр"
 
+msgid "We received your request"
+msgstr "Ваш запрос получен"
+
+msgid "Hello, %(name)s!\n\nThank you for contacting MGA Reklama. Your request has been received and we will contact you soon.\n\nMGA Reklama"
+msgstr "Здравствуйте, %(name)s!\n\nСпасибо, что обратились в MGA Reklama. Ваш запрос принят, мы свяжемся с вами в ближайшее время.\n\nMGA Reklama"
+
+msgid "Enter a valid phone number."
+msgstr "Введите корректный номер телефона."
+
