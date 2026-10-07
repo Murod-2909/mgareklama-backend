@@ -98,11 +98,12 @@ class AdminVideoUploadTests(VideoTestCase):
         with Image.open(gallery.thumbnail.path) as im:
             self.assertLessEqual(max(im.size), 600)
 
-    def test_vertical_mov_keeps_orientation(self):
+    def test_vertical_mov_long_side_is_capped_at_1280(self):
         self.assertEqual(self.add_gallery_via_admin(video=upload(self.vertical)).status_code, 302)
         gallery = Gallery.objects.get()
         stream = [s for s in probe(gallery.video.path) if s['codec_type'] == 'video'][0]
-        self.assertEqual((stream['width'], stream['height']), (1080, 1920))
+        self.assertEqual((stream['width'], stream['height']), (720, 1280))
+        self.assertLessEqual(max(stream['width'], stream['height']), 1280)
         self.assertTrue(gallery.video.name.endswith('.mp4'))
         self.assertEqual(self.api_images()[0]['duration'], 3)
 
@@ -111,6 +112,12 @@ class AdminVideoUploadTests(VideoTestCase):
         self.assertEqual(self.add_gallery_via_admin(video=upload(wide)).status_code, 302)
         stream = probe(Gallery.objects.get().video.path)[0]
         self.assertEqual((stream['width'], stream['height']), (1280, 720))
+
+    def test_small_vertical_video_is_not_upscaled(self):
+        small = make_sample('small_vertical.mp4', 1, '360x640', rate=5, audio=False)
+        self.assertEqual(self.add_gallery_via_admin(video=upload(small)).status_code, 302)
+        stream = probe(Gallery.objects.get().video.path)[0]
+        self.assertEqual((stream['width'], stream['height']), (360, 640))
 
     def test_own_poster_is_used(self):
         self.assertEqual(self.add_gallery_via_admin(video=upload(self.mp4), image=png_upload()).status_code, 302)

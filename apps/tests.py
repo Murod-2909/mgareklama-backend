@@ -109,3 +109,47 @@ class ServiceSlugMigrationTests(TestCase):
         }
         for name, slug in cases.items():
             self.assertEqual(migration.slug_for_image(name), slug, name)
+
+
+class FixServiceTitlesMigrationTests(TestCase):
+    def make_service(self, slug, **titles):
+        service = Service.objects.create(slug=slug)
+        for language, title in titles.items():
+            service.set_current_language(language)
+            service.title = title
+            service.save()
+        return service
+
+    def titles(self, lang):
+        return {s['slug']: s['title'] for s in self.client.get(f'/api/v1/services/?lang={lang}', HTTP_HOST='127.0.0.1').json()}
+
+    def test_wrong_titles_are_fixed_and_custom_ones_kept(self):
+        from django.apps import apps
+        migration = importlib.import_module('apps.migrations.0017_fix_service_titles')
+        self.make_service('interior-printing', en='İnterior Printing', ru='Внутренняя печать', uz='Interyer bosib chiqarish')
+        self.make_service('cnc-cutting', en='Cnc Cutting', ru='ЧПУ резка')
+        self.make_service('laser-plexiglass-machine', en='Laser Plexiglass Machine',
+                          ru='Лазерный сварочный аппарат для оргстекла', uz='Lazer pleksiglas stanogi')
+        self.make_service('plotter-cutting', en='Plotter Cutting', ru='Плоттер реска')
+        self.make_service('uv-printing', en='UV Printing', ru='Своё название')
+        self.make_service('metal-laser-cutting-machine', en='Metal Laser Cutting Machine')
+
+        migration.fix_service_titles(apps, None)
+        migration.fix_service_titles(apps, None)  # idempotent
+
+        en, ru, uz = self.titles('en'), self.titles('ru'), self.titles('uz')
+        self.assertEqual(en['interior-printing'], 'Interior Printing')
+        self.assertEqual(en['cnc-cutting'], 'CNC Cutting')
+        self.assertEqual(en['metal-laser-cutting-machine'], 'Metal Laser Cutting Machine')
+        self.assertEqual(ru['laser-plexiglass-machine'], 'Лазерный станок для оргстекла')
+        self.assertEqual(ru['plotter-cutting'], 'Плоттерная резка')
+        self.assertEqual(ru['uv-printing'], 'Своё название')
+        self.assertEqual(ru['interior-printing'], 'Внутренняя печать')
+        self.assertEqual(uz['interior-printing'], 'Interyer bosib chiqarish')
+
+    def test_value_changed_by_admin_is_not_overwritten(self):
+        from django.apps import apps
+        migration = importlib.import_module('apps.migrations.0017_fix_service_titles')
+        self.make_service('cnc-cutting', en='CNC cutting (custom)')
+        migration.fix_service_titles(apps, None)
+        self.assertEqual(self.titles('en')['cnc-cutting'], 'CNC cutting (custom)')
