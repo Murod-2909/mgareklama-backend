@@ -37,3 +37,12 @@ msgstr "Video"
 msgid "Preview"
 msgstr "Ko'rinish"
 
+msgid "We received your request"
+msgstr "So'rovingiz qabul qilindi"
+
+msgid "Hello, %(name)s!\n\nThank you for contacting MGA Reklama. Your request has been received and we will contact you soon.\n\nMGA Reklama"
+msgstr "Assalomu alaykum, %(name)s!\n\nMGA Reklama'ga murojaat qilganingiz uchun rahmat. So'rovingiz qabul qilindi, tez orada siz bilan bog'lanamiz.\n\nMGA Reklama"
+
+msgid "Enter a valid phone number."
+msgstr "To'g'ri telefon raqam kiriting."
+

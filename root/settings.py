@@ -3,6 +3,20 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+
+def _load_env_file(path):
+    if not path.exists():
+        return
+    for line in path.read_text(encoding='utf-8').splitlines():
+        line = line.strip()
+        if not line or line.startswith('#') or '=' not in line:
+            continue
+        key, _sep, value = line.partition('=')
+        os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
+
+
+_load_env_file(BASE_DIR / '.env')
+
 SECRET_KEY = ' django-insecure-^&%i)+!!zfe^-$btu07$^8!pdqtw+v-8g=xle66-z00te1a)l)'
 
 DEBUG = True
@@ -40,6 +54,14 @@ MIDDLEWARE = [
 
 REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+
+    'DEFAULT_THROTTLE_RATES': {
+        'contact': '5/min',
+        'contact_day': '30/day',
+        'newsletter': '5/min',
+    },
+    # number of reverse proxies (nginx) in front of gunicorn; used to read the real client IP from X-Forwarded-For
+    'NUM_PROXIES': int(os.environ.get('NUM_PROXIES', '1')),
 
     'DEFAULT_PERMISSION_CLASSES': [
         # 'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly'
@@ -145,6 +167,19 @@ STATIC_ROOT = os.path.join(BASE_DIR, "static")
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+
+EMAIL_HOST = os.environ.get('EMAIL_HOST', '')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '587'))
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'true').lower() in ('1', 'true', 'yes')
+EMAIL_BACKEND = ('django.core.mail.backends.smtp.EmailBackend' if EMAIL_HOST
+                 else 'django.core.mail.backends.console.EmailBackend')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'MGA Reklama <no-reply@mgareklama.com>')
+CONTACT_NOTIFY_EMAILS = [e.strip() for e in os.environ.get('CONTACT_NOTIFY_EMAILS', '').split(',') if e.strip()]
+ADMIN_BASE_URL = os.environ.get('ADMIN_BASE_URL', 'https://api.mgareklama.com')
+TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN', '')
+TELEGRAM_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID', '')
 
 DATA_UPLOAD_MAX_MEMORY_SIZE = 110 * 1024 * 1024
 FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
