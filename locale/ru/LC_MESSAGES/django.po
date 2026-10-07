@@ -1,0 +1,39 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: mgareklama\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+msgid "Upload an image or a video."
+msgstr "Загрузите изображение или видео."
+
+msgid "Unsupported video format. Allowed: MP4, MOV, WEBM, M4V."
+msgstr "Неподдерживаемый формат видео. Допустимы: MP4, MOV, WEBM, M4V."
+
+msgid "The video is too large (maximum 100 MB)."
+msgstr "Видео слишком большое (максимум 100 МБ)."
+
+msgid "The video is too long (maximum 120 seconds)."
+msgstr "Видео слишком длинное (максимум 120 секунд)."
+
+msgid "The video could not be processed. Upload a valid video file."
+msgstr "Не удалось обработать видео. Загрузите корректный видеофайл."
+
+msgid "Video processing is not available: ffmpeg is not installed on the server."
+msgstr "Обработка видео недоступна: на сервере не установлен ffmpeg."
+
+msgid "MP4/MOV/WEBM, up to 120 seconds, up to 100 MB. The poster is created automatically."
+msgstr "MP4/MOV/WEBM, до 120 секунд, до 100 МБ. Постер создаётся автоматически."
+
+msgid "Upload an image or a video. For a video the poster is created automatically; upload an image only to use your own poster."
+msgstr "Загрузите изображение или видео. Для видео постер создаётся автоматически; загрузите изображение, только чтобы использовать свой постер."
+
+msgid "Video"
+msgstr "Видео"
+
+msgid "Preview"
+msgstr "Предпросмотр"
+

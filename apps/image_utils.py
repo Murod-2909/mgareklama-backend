@@ -1,9 +1,14 @@
 import os
+import tempfile
 from io import BytesIO
 
-from django.core.files.base import ContentFile
-from django.db.models import Model, ImageField
+from django.core.exceptions import ValidationError
+from django.core.files.base import ContentFile, File
+from django.db.models import Model, ImageField, FileField, CharField, PositiveIntegerField
+from django.utils.translation import gettext_lazy as _
 from PIL import Image, ImageChops, ImageOps
+
+from apps import video_utils
 
 MAIN_MAX_SIDE = 1600
 TRIM_PADDING = 0.04
@@ -91,3 +96,57 @@ class OptimizedImageModel(Model):
             main, thumb = build_variants(source.file, self.main_max_side, trim=self.trim_logo)
             self.apply_variants(main, thumb, source.name)
         super().save(*args, **kwargs)
+
+
+class OptimizedMediaModel(OptimizedImageModel):
+    MEDIA_TYPES = [('image', 'Image'), ('video', 'Video')]
+
+    video = FileField(upload_to='videos/%Y/%m/%d', blank=True, null=True, verbose_name=_("Video"),
+                      help_text=_("MP4/MOV/WEBM, up to 120 seconds, up to 100 MB. The poster is created automatically."))
+    media_type = CharField(max_length=5, choices=MEDIA_TYPES, default='image', editable=False, db_index=True)
+    duration = PositiveIntegerField(null=True, blank=True, editable=False)
+
+    class Meta:
+        abstract = True
+
+    def _is_new_video(self):
+        return bool(self.video) and not self.video._committed
+
+    def clean(self):
+        super().clean()
+        if not self.image and not self.video:
+            raise ValidationError(_("Upload an image or a video."))
+        if self._is_new_video():
+            with tempfile.TemporaryDirectory() as directory:
+                video_utils.validate_video_upload(self.video, directory)
+
+    def _process_new_video(self):
+        with tempfile.TemporaryDirectory() as directory:
+            duration = video_utils.validate_video_upload(self.video, directory)
+            source = os.path.join(directory, 'source' + os.path.splitext(self.video.name)[1].lower())
+            target = os.path.join(directory, 'video.mp4')
+            video_utils.transcode(source, target)
+
+            name = os.path.splitext(os.path.basename(self.video.name))[0] + '.mp4'
+            with open(target, 'rb') as f:
+                self.video.save(name, File(f), save=False)
+            self.duration = round(duration)
+
+            custom_poster = self.image and not self.image._committed
+            if not custom_poster:
+                poster = os.path.join(directory, 'poster.png')
+                video_utils.extract_poster(target, poster, duration)
+                with open(poster, 'rb') as f:
+                    main, thumb = build_variants(f, self.main_max_side, trim=self.trim_logo)
+                self.apply_variants(main, thumb, name)
+
+    def save(self, *args, **kwargs):
+        old_video = None
+        if self.pk:
+            old_video = type(self).objects.filter(pk=self.pk).values_list('video', flat=True).first()
+        if self._is_new_video():
+            self._process_new_video()
+        self.media_type = 'video' if self.video else 'image'
+        super().save(*args, **kwargs)
+        if old_video and old_video != self.video.name:
+            self.video.storage.delete(old_video)

@@ -1,8 +1,9 @@
 from django.conf import settings
+from django.db.models import Exists, OuterRef
 from django.utils import translation
 from rest_framework.generics import ListAPIView, RetrieveAPIView, CreateAPIView
 
-from apps.models import Gallery, SiteSetting, Partner, Service, ContactForm, ClientEmail, Project
+from apps.models import Gallery, SiteSetting, Partner, Service, ContactForm, ClientEmail, Project, ProjectPhoto
 from apps.serializers import SiteSettingSerializer, PartnerModelSerializer, \
     ServiceModelSerializer, ContactFormModelSerializers, ClientEmailModelSerializers, GallerySerializer, \
     ProjectListSerializer, ProjectDetailSerializer
@@ -80,6 +81,7 @@ class ProjectQuerysetMixin:
 
         return (Project.objects.filter(is_published=True)
                 .active_translations(lang)
+                .annotate(has_video=Exists(ProjectPhoto.objects.filter(project=OuterRef('pk'), media_type='video')))
                 .prefetch_related('photos', 'translations'))
 
 

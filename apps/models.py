@@ -2,13 +2,13 @@ import uuid
 
 from django.db.models import Model, ImageField, DateTimeField, CharField, EmailField, URLField, TextField, ForeignKey, \
     CASCADE, PositiveIntegerField, PositiveSmallIntegerField, SlugField, BooleanField
-from django.db.models.signals import post_save
+from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 from parler.models import TranslatableModel, TranslatedFields
 
-from apps.image_utils import OptimizedImageModel
+from apps.image_utils import OptimizedImageModel, OptimizedMediaModel
 
 
 class Banner(OptimizedImageModel):
@@ -21,8 +21,9 @@ class Banner(OptimizedImageModel):
         verbose_name_plural = _("Banners")
 
 
-class Gallery(OptimizedImageModel):
-    image = ImageField(upload_to='images/%Y/%m/%d', verbose_name=_("Image"))
+class Gallery(OptimizedMediaModel):
+    image = ImageField(upload_to='images/%Y/%m/%d', verbose_name=_("Image"), blank=True,
+                       help_text=_("Upload an image or a video. For a video the poster is created automatically; upload an image only to use your own poster."))
 
     class Meta:
         verbose_name = _("Gallery")
@@ -31,8 +32,9 @@ class Gallery(OptimizedImageModel):
     def __str__(self):
         return f"Gallery {self.pk}"
 
-class GalleryGroup(OptimizedImageModel):
-    image = ImageField(upload_to='images/%Y/%m/%d', verbose_name=_("Image"))
+class GalleryGroup(OptimizedMediaModel):
+    image = ImageField(upload_to='images/%Y/%m/%d', verbose_name=_("Image"), blank=True,
+                       help_text=_("Upload an image or a video. For a video the poster is created automatically; upload an image only to use your own poster."))
     gallery = ForeignKey('apps.Gallery', verbose_name=_("Gallery"), related_name='same_images', on_delete=CASCADE)
 
     class Meta:
@@ -220,9 +222,10 @@ def set_project_slug_from_english_title(sender, instance, **kwargs):
     project.slug = slug
 
 
-class ProjectPhoto(OptimizedImageModel):
+class ProjectPhoto(OptimizedMediaModel):
     project = ForeignKey('apps.Project', verbose_name=_("Project"), related_name='photos', on_delete=CASCADE)
-    image = ImageField(upload_to='project-photos/%Y/%m/%d', verbose_name=_("Image"))
+    image = ImageField(upload_to='project-photos/%Y/%m/%d', verbose_name=_("Image"), blank=True,
+                       help_text=_("Upload an image or a video. For a video the poster is created automatically; upload an image only to use your own poster."))
     order = PositiveIntegerField(default=0, verbose_name=_("Order"))
 
     class Meta:
@@ -232,3 +235,11 @@ class ProjectPhoto(OptimizedImageModel):
 
     def __str__(self):
         return f"Photo {self.pk} for project {self.project_id}"
+
+
+@receiver(post_delete, sender=Gallery)
+@receiver(post_delete, sender=GalleryGroup)
+@receiver(post_delete, sender=ProjectPhoto)
+def delete_video_file(sender, instance, **kwargs):
+    if instance.video:
+        instance.video.storage.delete(instance.video.name)

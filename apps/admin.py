@@ -2,10 +2,27 @@ from django.contrib import admin
 from django.contrib.auth.models import Group
 from django.shortcuts import redirect
 from django.utils.html import format_html
+from django.utils.translation import gettext_lazy as _
 from django.urls import reverse
 from parler.admin import TranslatableAdmin
 
 from apps.models import Gallery, SiteSetting, ContactForm, Partner, Service, ServiceWork, ClientEmail, GalleryGroup, Project, ProjectPhoto
+
+
+class MediaPreviewMixin:
+    @admin.display(description=_("Preview"))
+    def preview(self, obj):
+        if not obj.pk:
+            return "-"
+        poster = obj.image.url if obj.image else (obj.thumbnail.url if obj.thumbnail else '')
+        if obj.media_type == 'video' and obj.video:
+            return format_html(
+                '<video src="{}" poster="{}" controls preload="metadata" style="max-width:320px"></video>',
+                obj.video.url, poster)
+        thumb = obj.thumbnail.url if obj.thumbnail else poster
+        if thumb:
+            return format_html('<img src="{}" style="max-width:160px;border-radius:4px">', thumb)
+        return "-"
 
 
 @admin.register(SiteSetting)
@@ -47,10 +64,11 @@ class ServiceTranslatableAdmin(TranslatableAdmin):
     inlines = ServiceWorkInline,
 
 
-class ProjectPhotoInline(admin.TabularInline):
+class ProjectPhotoInline(MediaPreviewMixin, admin.TabularInline):
     model = ProjectPhoto
     extra = 3
-    fields = ['image', 'order']
+    fields = ['image', 'video', 'order', 'preview', 'media_type', 'duration']
+    readonly_fields = ['preview', 'media_type', 'duration']
 
 
 @admin.register(Project)
@@ -74,17 +92,20 @@ class ClientEmailModelAdmin(admin.ModelAdmin):
     pass
 
 
-class GalleryGroupInline(admin.TabularInline):
+class GalleryGroupInline(MediaPreviewMixin, admin.TabularInline):
     model = GalleryGroup
     extra = 1
-    fields = ['image']
+    fields = ['image', 'video', 'preview', 'media_type', 'duration']
+    readonly_fields = ['preview', 'media_type', 'duration']
     verbose_name = "Additional image"
     verbose_name_plural = "Additional images"
 
 
 @admin.register(Gallery)
-class GalleryAdmin(admin.ModelAdmin):
-    list_display = 'id',
+class GalleryAdmin(MediaPreviewMixin, admin.ModelAdmin):
+    list_display = 'preview', 'id', 'media_type'
+    fields = ['image', 'video', 'preview', 'media_type', 'duration', 'thumbnail']
+    readonly_fields = ['preview', 'media_type', 'duration', 'thumbnail']
     inlines = GalleryGroupInline,
 
 
