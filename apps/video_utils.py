@@ -11,7 +11,7 @@ MAX_VIDEO_SECONDS = 120
 TRANSCODE_TIMEOUT = 300
 
 TRANSCODE_ARGS = [
-    '-vf', "scale='min(1280,iw)':-2",
+    '-vf', "scale='if(gt(iw,ih),min(1280,iw),-2)':'if(gt(iw,ih),-2,min(1280,ih))'",
     '-c:v', 'libx264', '-preset', 'medium', '-crf', '28', '-pix_fmt', 'yuv420p', '-profile:v', 'high',
     '-c:a', 'aac', '-b:a', '96k',
     '-movflags', '+faststart',
