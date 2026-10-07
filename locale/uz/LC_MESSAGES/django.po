@@ -1,0 +1,39 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: mgareklama\n"
+"Language: uz\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+msgid "Upload an image or a video."
+msgstr "Rasm yoki video yuklang."
+
+msgid "Unsupported video format. Allowed: MP4, MOV, WEBM, M4V."
+msgstr "Video formati qo'llab-quvvatlanmaydi. Ruxsat etilgan: MP4, MOV, WEBM, M4V."
+
+msgid "The video is too large (maximum 100 MB)."
+msgstr "Video hajmi juda katta (eng ko'pi 100 MB)."
+
+msgid "The video is too long (maximum 120 seconds)."
+msgstr "Video juda uzun (eng ko'pi 120 soniya)."
+
+msgid "The video could not be processed. Upload a valid video file."
+msgstr "Videoni qayta ishlab bo'lmadi. To'g'ri video fayl yuklang."
+
+msgid "Video processing is not available: ffmpeg is not installed on the server."
+msgstr "Videoni qayta ishlash mavjud emas: serverda ffmpeg o'rnatilmagan."
+
+msgid "MP4/MOV/WEBM, up to 120 seconds, up to 100 MB. The poster is created automatically."
+msgstr "MP4/MOV/WEBM, 120 soniyagacha, 100 MB gacha. Poster avtomatik yaratiladi."
+
+msgid "Upload an image or a video. For a video the poster is created automatically; upload an image only to use your own poster."
+msgstr "Rasm yoki video yuklang. Video uchun poster avtomatik yaratiladi; o'z posteringizni ishlatish uchun rasm yuklang."
+
+msgid "Video"
+msgstr "Video"
+
+msgid "Preview"
+msgstr "Ko'rinish"
+

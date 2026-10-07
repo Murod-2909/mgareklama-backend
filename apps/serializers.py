@@ -1,4 +1,4 @@
-from rest_framework.serializers import ModelSerializer, CharField, ImageField, SerializerMethodField
+from rest_framework.serializers import BooleanField, ModelSerializer, CharField, ImageField, SerializerMethodField
 
 from apps.models import Gallery, SiteSetting, Partner, Service, ServiceWork, ContactForm, ClientEmail, GalleryGroup, \
     Project, ProjectPhoto
@@ -7,14 +7,14 @@ from apps.models import Gallery, SiteSetting, Partner, Service, ServiceWork, Con
 class GalleryGroupSerializer(ModelSerializer):
     class Meta:
         model = GalleryGroup
-        fields = ['id', 'image', 'thumbnail']
+        fields = ['id', 'media_type', 'image', 'thumbnail', 'video', 'duration']
 
 class GallerySerializer(ModelSerializer):
     same_images = GalleryGroupSerializer(many=True, read_only=True)
 
     class Meta:
         model = Gallery
-        fields = ['id', 'image', 'thumbnail', 'same_images']
+        fields = ['id', 'media_type', 'image', 'thumbnail', 'video', 'duration', 'same_images']
 
 class SiteSettingSerializer(ModelSerializer):
     class Meta:
@@ -59,7 +59,7 @@ class ClientEmailModelSerializers(ModelSerializer):
 class ProjectPhotoSerializer(ModelSerializer):
     class Meta:
         model = ProjectPhoto
-        fields = 'id', 'image', 'thumbnail'
+        fields = 'id', 'media_type', 'image', 'thumbnail', 'video', 'duration'
 
 
 class ProjectListSerializer(ModelSerializer):
@@ -68,11 +68,12 @@ class ProjectListSerializer(ModelSerializer):
     cover = ImageField(read_only=True)
     cover_thumbnail = ImageField(source='thumbnail', read_only=True)
     photos_count = SerializerMethodField()
+    has_video = BooleanField(read_only=True)
 
     class Meta:
         model = Project
         fields = ('id', 'slug', 'title', 'location', 'year', 'category',
-                  'cover', 'cover_thumbnail', 'photos_count')
+                  'cover', 'cover_thumbnail', 'photos_count', 'has_video')
 
     def get_photos_count(self, obj):
         return len(obj.photos.all())

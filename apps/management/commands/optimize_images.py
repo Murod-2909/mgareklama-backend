@@ -9,7 +9,8 @@ MODELS = (Gallery, GalleryGroup, Service, ServiceWork, Partner, Banner, SiteSett
 
 def is_referenced(name):
     for model in MODELS:
-        for field in (model.image_field, 'thumbnail'):
+        fields = {f.name for f in model._meta.get_fields()}
+        for field in {model.image_field, 'thumbnail', 'video'} & fields:
             if model.objects.filter(**{field: name}).exists():
                 return True
     return False
