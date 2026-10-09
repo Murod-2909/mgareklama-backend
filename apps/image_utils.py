@@ -4,7 +4,7 @@ from io import BytesIO
 
 from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile, File
-from django.db.models import Model, ImageField, FileField, CharField, PositiveIntegerField
+from django.db.models import Model, ImageField, FileField, CharField, PositiveIntegerField, URLField
 from django.utils.translation import gettext_lazy as _
 from PIL import Image, ImageChops, ImageOps
 
@@ -103,6 +103,10 @@ class OptimizedMediaModel(OptimizedImageModel):
 
     video = FileField(upload_to='videos/%Y/%m/%d', blank=True, null=True, verbose_name=_("Video"),
                       help_text=_("MP4/MOV/WEBM, up to 120 seconds, up to 100 MB. The poster is created automatically."))
+    video_url = URLField(max_length=300, blank=True, verbose_name=_("Video link"),
+                         help_text=_("Instagram or YouTube link (for example https://www.instagram.com/reel/XXXX/). "
+                                     "For Instagram also upload a poster image. "
+                                     "If a video file is uploaded too, the file takes priority."))
     media_type = CharField(max_length=5, choices=MEDIA_TYPES, default='image', editable=False, db_index=True)
     duration = PositiveIntegerField(null=True, blank=True, editable=False)
 
@@ -114,8 +118,10 @@ class OptimizedMediaModel(OptimizedImageModel):
 
     def clean(self):
         super().clean()
-        if not self.image and not self.video:
-            raise ValidationError(_("Upload an image or a video."))
+        if not self.image and not self.video and not self.video_url:
+            raise ValidationError(_("Upload an image or a video, or add a video link."))
+        if self.video_url:
+            video_utils.validate_video_url(self.video_url)
         if self._is_new_video():
             with tempfile.TemporaryDirectory() as directory:
                 video_utils.validate_video_upload(self.video, directory)
@@ -146,7 +152,9 @@ class OptimizedMediaModel(OptimizedImageModel):
             old_video = type(self).objects.filter(pk=self.pk).values_list('video', flat=True).first()
         if self._is_new_video():
             self._process_new_video()
-        self.media_type = 'video' if self.video else 'image'
+        self.media_type = 'video' if (self.video or self.video_url) else 'image'
+        if not self.video:
+            self.duration = None
         super().save(*args, **kwargs)
         if old_video and old_video != self.video.name:
             self.video.storage.delete(old_video)

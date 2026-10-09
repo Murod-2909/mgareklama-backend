@@ -46,3 +46,24 @@ msgstr "Здравствуйте, %(name)s!\n\nСпасибо, что обрат
 msgid "Enter a valid phone number."
 msgstr "Введите корректный номер телефона."
 
+msgid "Upload an image or a video, or add a video link."
+msgstr "Загрузите изображение или видео, либо укажите ссылку на видео."
+
+msgid "Enter a valid Instagram or YouTube link."
+msgstr "Введите корректную ссылку на Instagram или YouTube."
+
+msgid "Enter a link to a specific Instagram post or reel (for example https://www.instagram.com/reel/XXXX/)."
+msgstr "Укажите ссылку на конкретный пост или reel в Instagram (например, https://www.instagram.com/reel/XXXX/)."
+
+msgid "Enter a link to a specific YouTube video."
+msgstr "Укажите ссылку на конкретное видео на YouTube."
+
+msgid "Only Instagram and YouTube links are allowed."
+msgstr "Допустимы только ссылки на Instagram и YouTube."
+
+msgid "Video link"
+msgstr "Ссылка на видео"
+
+msgid "Instagram or YouTube link (for example https://www.instagram.com/reel/XXXX/). For Instagram also upload a poster image. If a video file is uploaded too, the file takes priority."
+msgstr "Ссылка на Instagram или YouTube (например, https://www.instagram.com/reel/XXXX/). Для Instagram также загрузите постер. Если загружен и видеофайл, приоритет у файла."
+

@@ -88,7 +88,7 @@ class AdminVideoUploadTests(VideoTestCase):
         self.assertTrue(item['video'].startswith('http://127.0.0.1') and item['video'].endswith('.mp4'))
         self.assertTrue(item['image'].endswith('.webp') and item['thumbnail'].endswith('.webp'))
         self.assertEqual(item['duration'], 5)
-        self.assertEqual(list(item), ['id', 'media_type', 'image', 'thumbnail', 'video', 'duration', 'same_images'])
+        self.assertEqual(list(item), ['id', 'media_type', 'image', 'thumbnail', 'video', 'video_url', 'duration', 'same_images'])
         gallery = Gallery.objects.get()
         with open(gallery.video.path, 'rb') as f:
             head = f.read(200_000)
@@ -137,12 +137,13 @@ class AdminVideoUploadTests(VideoTestCase):
     def test_empty_form_shows_error(self):
         response = self.add_gallery_via_admin()
         self.assertEqual(response.status_code, 200)
-        self.assertIn('Upload an image or a video', response.content.decode())
+        self.assertIn('Upload an image or a video, or add a video link', response.content.decode())
         self.assertEqual(Gallery.objects.count(), 0)
 
     def test_error_message_is_translated(self):
-        for language, expected in (('uz', "Rasm yoki video yuklang"), ('ru', "Загрузите изображение или видео"),
-                                   ('en', "Upload an image or a video")):
+        for language, expected in (('uz', "Rasm yoki video yuklang, yoki video havolasini kiriting"),
+                                   ('ru', "Загрузите изображение или видео, либо укажите ссылку"),
+                                   ('en', "Upload an image or a video, or add a video link")):
             with translation.override(language):
                 try:
                     Gallery().full_clean()
@@ -247,7 +248,7 @@ class ProjectApiTests(VideoTestCase):
         detail = self.client.get('/api/v1/projects/with-video/?lang=en', **HOST).json()
         self.assertTrue(detail['has_video'])
         self.assertEqual([p['media_type'] for p in detail['photos']], ['image', 'video'])
-        self.assertEqual(list(detail['photos'][1]), ['id', 'media_type', 'image', 'thumbnail', 'video', 'duration'])
+        self.assertEqual(list(detail['photos'][1]), ['id', 'media_type', 'image', 'thumbnail', 'video', 'video_url', 'duration'])
         self.assertEqual(detail['photos'][1]['duration'], 5)
 
     def test_query_count_does_not_grow(self):
