@@ -11,14 +11,14 @@ from apps.models import Gallery, SiteSetting, Partner, Service, ServiceWork, Con
 class GalleryGroupSerializer(ModelSerializer):
     class Meta:
         model = GalleryGroup
-        fields = ['id', 'media_type', 'image', 'thumbnail', 'video', 'duration']
+        fields = ['id', 'media_type', 'image', 'thumbnail', 'video', 'video_url', 'duration']
 
 class GallerySerializer(ModelSerializer):
     same_images = GalleryGroupSerializer(many=True, read_only=True)
 
     class Meta:
         model = Gallery
-        fields = ['id', 'media_type', 'image', 'thumbnail', 'video', 'duration', 'same_images']
+        fields = ['id', 'media_type', 'image', 'thumbnail', 'video', 'video_url', 'duration', 'same_images']
 
 class SiteSettingSerializer(ModelSerializer):
     class Meta:
@@ -106,7 +106,7 @@ class ClientEmailModelSerializers(ModelSerializer):
 class ProjectPhotoSerializer(ModelSerializer):
     class Meta:
         model = ProjectPhoto
-        fields = 'id', 'media_type', 'image', 'thumbnail', 'video', 'duration'
+        fields = 'id', 'media_type', 'image', 'thumbnail', 'video', 'video_url', 'duration'
 
 
 class ProjectListSerializer(ModelSerializer):

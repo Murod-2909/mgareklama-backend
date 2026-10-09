@@ -23,6 +23,11 @@ class MediaPreviewMixin:
                 '<video src="{}" poster="{}" controls preload="metadata" style="max-width:320px"></video>',
                 obj.video.url, poster)
         thumb = obj.thumbnail.url if obj.thumbnail else poster
+        if obj.video_url:
+            link = format_html('<a href="{}" target="_blank" rel="noopener noreferrer">{}</a>', obj.video_url, obj.video_url)
+            if thumb:
+                return format_html('<img src="{}" style="max-width:160px;border-radius:4px"><br>{}', thumb, link)
+            return link
         if thumb:
             return format_html('<img src="{}" style="max-width:160px;border-radius:4px">', thumb)
         return "-"
@@ -100,7 +105,7 @@ class ServiceTranslatableAdmin(TranslatableAdmin):
 class ProjectPhotoInline(MediaPreviewMixin, admin.TabularInline):
     model = ProjectPhoto
     extra = 3
-    fields = ['image', 'video', 'order', 'preview', 'media_type', 'duration']
+    fields = ['image', 'video', 'video_url', 'order', 'preview', 'media_type', 'duration']
     readonly_fields = ['preview', 'media_type', 'duration']
 
 
@@ -134,7 +139,7 @@ class ClientEmailModelAdmin(admin.ModelAdmin):
 class GalleryGroupInline(MediaPreviewMixin, admin.TabularInline):
     model = GalleryGroup
     extra = 1
-    fields = ['image', 'video', 'preview', 'media_type', 'duration']
+    fields = ['image', 'video', 'video_url', 'preview', 'media_type', 'duration']
     readonly_fields = ['preview', 'media_type', 'duration']
     verbose_name = "Additional image"
     verbose_name_plural = "Additional images"
@@ -143,7 +148,7 @@ class GalleryGroupInline(MediaPreviewMixin, admin.TabularInline):
 @admin.register(Gallery)
 class GalleryAdmin(MediaPreviewMixin, admin.ModelAdmin):
     list_display = 'preview', 'id', 'media_type'
-    fields = ['image', 'video', 'preview', 'media_type', 'duration', 'thumbnail']
+    fields = ['image', 'video', 'video_url', 'preview', 'media_type', 'duration', 'thumbnail']
     readonly_fields = ['preview', 'media_type', 'duration', 'thumbnail']
     inlines = GalleryGroupInline,
 

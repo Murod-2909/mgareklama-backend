@@ -1,6 +1,8 @@
 import os
+import re
 import shutil
 import subprocess
+from urllib.parse import urlparse
 
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
@@ -9,6 +11,10 @@ ALLOWED_EXTENSIONS = ('.mp4', '.mov', '.webm', '.m4v')
 MAX_VIDEO_BYTES = 100 * 1024 * 1024
 MAX_VIDEO_SECONDS = 120
 TRANSCODE_TIMEOUT = 300
+
+INSTAGRAM_HOSTS = {'instagram.com', 'www.instagram.com'}
+YOUTUBE_HOSTS = {'youtube.com', 'www.youtube.com', 'm.youtube.com', 'youtu.be'}
+INSTAGRAM_PATH = re.compile(r'^/(?:[A-Za-z0-9._]+/)?(?:p|reel|reels|tv)/[A-Za-z0-9_-]+/?$')
 
 TRANSCODE_ARGS = [
     '-vf', "scale='if(gt(iw,ih),min(1280,iw),-2)':'if(gt(iw,ih),-2,min(1280,ih))'",
@@ -66,3 +72,23 @@ def transcode(source, target):
 
 def extract_poster(video_path, target, duration):
     _run(['ffmpeg', '-y', '-ss', str(min(1, duration / 2)), '-i', video_path, '-frames:v', '1', target])
+
+
+def validate_video_url(url):
+    """Accept only Instagram post/reel/tv links and YouTube links (exact hosts, http/https)."""
+    try:
+        parsed = urlparse(url)
+        host = parsed.hostname
+    except ValueError:
+        raise ValidationError(_("Enter a valid Instagram or YouTube link."))
+    if parsed.scheme not in ('http', 'https') or not host:
+        raise ValidationError(_("Enter a valid Instagram or YouTube link."))
+    if host in INSTAGRAM_HOSTS:
+        if not INSTAGRAM_PATH.match(parsed.path):
+            raise ValidationError(_("Enter a link to a specific Instagram post or reel "
+                                    "(for example https://www.instagram.com/reel/XXXX/)."))
+    elif host in YOUTUBE_HOSTS:
+        if parsed.path in ('', '/') and not parsed.query:
+            raise ValidationError(_("Enter a link to a specific YouTube video."))
+    else:
+        raise ValidationError(_("Only Instagram and YouTube links are allowed."))

@@ -46,3 +46,24 @@ msgstr "Assalomu alaykum, %(name)s!\n\nMGA Reklama'ga murojaat qilganingiz uchun
 msgid "Enter a valid phone number."
 msgstr "To'g'ri telefon raqam kiriting."
 
+msgid "Upload an image or a video, or add a video link."
+msgstr "Rasm yoki video yuklang, yoki video havolasini kiriting."
+
+msgid "Enter a valid Instagram or YouTube link."
+msgstr "To'g'ri Instagram yoki YouTube havolasini kiriting."
+
+msgid "Enter a link to a specific Instagram post or reel (for example https://www.instagram.com/reel/XXXX/)."
+msgstr "Instagram'dagi aniq post yoki reel havolasini kiriting (masalan, https://www.instagram.com/reel/XXXX/)."
+
+msgid "Enter a link to a specific YouTube video."
+msgstr "YouTube'dagi aniq video havolasini kiriting."
+
+msgid "Only Instagram and YouTube links are allowed."
+msgstr "Faqat Instagram va YouTube havolalariga ruxsat beriladi."
+
+msgid "Video link"
+msgstr "Video havola"
+
+msgid "Instagram or YouTube link (for example https://www.instagram.com/reel/XXXX/). For Instagram also upload a poster image. If a video file is uploaded too, the file takes priority."
+msgstr "Instagram yoki YouTube havolasi (masalan, https://www.instagram.com/reel/XXXX/). Instagram uchun posterni ham yuklang. Video fayl ham yuklansa, fayl ustun bo'ladi."
+
