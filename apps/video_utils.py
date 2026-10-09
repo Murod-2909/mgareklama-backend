@@ -2,7 +2,7 @@ import os
 import re
 import shutil
 import subprocess
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
@@ -13,7 +13,11 @@ MAX_VIDEO_SECONDS = 120
 TRANSCODE_TIMEOUT = 300
 
 INSTAGRAM_HOSTS = {'instagram.com', 'www.instagram.com'}
-YOUTUBE_HOSTS = {'youtube.com', 'www.youtube.com', 'm.youtube.com', 'youtu.be'}
+YOUTUBE_HOSTS = {'youtube.com', 'www.youtube.com', 'm.youtube.com'}
+YOUTUBE_SHORT_HOST = 'youtu.be'
+YOUTUBE_ID = re.compile(r'^[A-Za-z0-9_-]{11}$')
+YOUTUBE_SHORT_PATH = re.compile(r'^/[A-Za-z0-9_-]{11}/?$')
+YOUTUBE_VIDEO_PATH = re.compile(r'^/(?:shorts|embed|live)/[A-Za-z0-9_-]{11}/?$')
 INSTAGRAM_PATH = re.compile(r'^/(?:[A-Za-z0-9._]+/)?(?:p|reel|reels|tv)/[A-Za-z0-9_-]+/?$')
 
 TRANSCODE_ARGS = [
@@ -75,7 +79,7 @@ def extract_poster(video_path, target, duration):
 
 
 def validate_video_url(url):
-    """Accept only Instagram post/reel/tv links and YouTube links (exact hosts, http/https)."""
+    """Accept only links to one Instagram post/reel/tv or one YouTube video (exact hosts, http/https)."""
     try:
         parsed = urlparse(url)
         host = parsed.hostname
@@ -87,8 +91,16 @@ def validate_video_url(url):
         if not INSTAGRAM_PATH.match(parsed.path):
             raise ValidationError(_("Enter a link to a specific Instagram post or reel "
                                     "(for example https://www.instagram.com/reel/XXXX/)."))
-    elif host in YOUTUBE_HOSTS:
-        if parsed.path in ('', '/') and not parsed.query:
+    elif host == YOUTUBE_SHORT_HOST or host in YOUTUBE_HOSTS:
+        if not _is_youtube_video(host, parsed):
             raise ValidationError(_("Enter a link to a specific YouTube video."))
     else:
         raise ValidationError(_("Only Instagram and YouTube links are allowed."))
+
+
+def _is_youtube_video(host, parsed):
+    if host == YOUTUBE_SHORT_HOST:
+        return bool(YOUTUBE_SHORT_PATH.match(parsed.path))
+    if parsed.path == '/watch':
+        return any(YOUTUBE_ID.match(v) for v in parse_qs(parsed.query).get('v', []))
+    return bool(YOUTUBE_VIDEO_PATH.match(parsed.path))

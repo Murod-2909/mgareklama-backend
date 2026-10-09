@@ -21,6 +21,38 @@ VALID = [
     'https://m.youtube.com/watch?v=dQw4w9WgXcQ',
     'https://youtu.be/dQw4w9WgXcQ',
     'https://www.youtube.com/shorts/dQw4w9WgXcQ',
+    'https://www.youtube.com/embed/dQw4w9WgXcQ',
+    'https://www.youtube.com/live/dQw4w9WgXcQ?feature=share',
+    'https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=PLabc123&index=2',
+    'https://www.youtube.com/watch?feature=share&v=dQw4w9WgXcQ',
+    'https://youtu.be/dQw4w9WgXcQ?si=abc123',
+    'https://youtu.be/dQw4w9WgXcQ/',
+    'https://youtu.be/a_B-c1D2e3F',
+]
+YOUTUBE_NOT_A_VIDEO = [
+    'https://www.youtube.com/',
+    'https://youtube.com',
+    'https://www.youtube.com/@mgareklama',
+    'https://www.youtube.com/channel/UCabcdefghijklmnopqrstuv',
+    'https://www.youtube.com/c/mgareklama',
+    'https://www.youtube.com/user/mgareklama',
+    'https://www.youtube.com/playlist?list=PLabc123def456',
+    'https://www.youtube.com/feed/subscriptions',
+    'https://www.youtube.com/results?search_query=mga',
+    'https://www.youtube.com/watch',
+    'https://www.youtube.com/watch?list=PLabc123def456',
+    'https://www.youtube.com/watch?v=short',
+    'https://www.youtube.com/watch?v=dQw4w9WgXcQextra',
+    'https://www.youtube.com/watch?v=dQw4w9Wg!cQ',
+    'https://www.youtube.com/shorts/',
+    'https://www.youtube.com/shorts/abc',
+    'https://www.youtube.com/embed/',
+    'https://www.youtube.com/live',
+    'https://www.youtube.com/v/dQw4w9WgXcQ',
+    'https://youtu.be/',
+    'https://youtu.be/short',
+    'https://youtu.be/dQw4w9WgXcQ/extra',
+    'https://m.youtube.com/@mgareklama',
 ]
 INVALID = [
     'https://vimeo.com/12345',
@@ -33,8 +65,9 @@ INVALID = [
     'https://www.instagram.com/',
     'https://www.instagram.com/mga.reklama/',
     'https://www.instagram.com/stories/user/123/',
-    'https://www.youtube.com/',
-    'ftp://www.youtube.com/watch?v=1',
+    'https://youtube.com.evil.com/watch?v=dQw4w9WgXcQ',
+    'https://www.youtube.com@evil.com/watch?v=dQw4w9WgXcQ',
+    'ftp://www.youtube.com/watch?v=dQw4w9WgXcQ',
     'javascript:alert(1)',
     'not a url',
 ]
@@ -50,6 +83,24 @@ class VideoLinkValidationTests(VideoTestCase):
         for url in INVALID:
             with self.subTest(url), self.assertRaises(ValidationError):
                 Gallery(video_url=url).full_clean()
+
+    def test_youtube_channels_playlists_and_home_are_rejected(self):
+        for url in YOUTUBE_NOT_A_VIDEO:
+            with self.subTest(url), self.assertRaises(ValidationError) as ctx:
+                Gallery(video_url=url).full_clean()
+            self.assertIn('Enter a link to a specific YouTube video.', str(ctx.exception))
+
+    def test_youtube_message_is_translated(self):
+        for language, expected in (('uz', "YouTube'dagi aniq video havolasini kiriting"),
+                                   ('ru', "Укажите ссылку на конкретное видео на YouTube")):
+            with translation.override(language):
+                try:
+                    Gallery(video_url='https://www.youtube.com/@mgareklama').full_clean()
+                except ValidationError as error:
+                    text = str(error)
+                else:
+                    self.fail('ValidationError expected')
+            self.assertIn(expected, text)
 
     def test_nothing_at_all_is_rejected_but_each_alone_is_fine(self):
         for model in (Gallery, GalleryGroup, ProjectPhoto):
