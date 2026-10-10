@@ -9,7 +9,7 @@ from django.utils.translation import gettext_lazy as _
 from django.urls import reverse
 from parler.admin import TranslatableAdmin
 
-from apps.models import Gallery, SiteSetting, ContactForm, Partner, Service, ServiceWork, ClientEmail, GalleryGroup, Project, ProjectPhoto
+from apps.models import SiteSetting, ContactForm, Partner, Service, ServiceWork, ClientEmail, Project, ProjectPhoto
 
 
 class MediaPreviewMixin:
@@ -134,23 +134,6 @@ class ClientEmailModelAdmin(admin.ModelAdmin):
     @admin.action(description="Tanlanganlarni CSV ga eksport qilish")
     def export_selected_csv(self, request, queryset):
         return export_csv(queryset, ['id', 'email'], 'subscribers', plain=('id',))
-
-
-class GalleryGroupInline(MediaPreviewMixin, admin.TabularInline):
-    model = GalleryGroup
-    extra = 1
-    fields = ['image', 'video', 'video_url', 'preview', 'media_type', 'duration']
-    readonly_fields = ['preview', 'media_type', 'duration']
-    verbose_name = "Additional image"
-    verbose_name_plural = "Additional images"
-
-
-@admin.register(Gallery)
-class GalleryAdmin(MediaPreviewMixin, admin.ModelAdmin):
-    list_display = 'preview', 'id', 'media_type'
-    fields = ['image', 'video', 'video_url', 'preview', 'media_type', 'duration', 'thumbnail']
-    readonly_fields = ['preview', 'media_type', 'duration', 'thumbnail']
-    inlines = GalleryGroupInline,
 
 
 admin.site.unregister(Group)

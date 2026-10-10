@@ -7,15 +7,10 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle, SimpleRateThrottle
 
 from apps.notifications import notify_new_contact
-from apps.models import Gallery, SiteSetting, Partner, Service, ContactForm, ClientEmail, Project, ProjectPhoto
+from apps.models import SiteSetting, Partner, Service, ContactForm, ClientEmail, Project, ProjectPhoto
 from apps.serializers import SiteSettingSerializer, PartnerModelSerializer, \
-    ServiceModelSerializer, ContactFormModelSerializers, ClientEmailModelSerializers, GallerySerializer, \
+    ServiceModelSerializer, ContactFormModelSerializers, ClientEmailModelSerializers, \
     ProjectListSerializer, ProjectDetailSerializer
-
-
-class GalleryListAPIView(ListAPIView):
-    queryset = Gallery.objects.prefetch_related('same_images').order_by('-id')
-    serializer_class = GallerySerializer
 
 
 class SiteSettingView(RetrieveAPIView):

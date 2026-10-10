@@ -153,3 +153,27 @@ class FixServiceTitlesMigrationTests(TestCase):
         self.make_service('cnc-cutting', en='CNC cutting (custom)')
         migration.fix_service_titles(apps, None)
         self.assertEqual(self.titles('en')['cnc-cutting'], 'CNC cutting (custom)')
+
+
+class GalleryRemovedTests(TestCase):
+    def test_images_endpoint_is_gone_and_others_still_work(self):
+        host = {'HTTP_HOST': '127.0.0.1'}
+        self.assertEqual(self.client.get('/api/v1/images/', **host).status_code, 404)
+        for url in ('/api/v1/projects/?lang=en', '/api/v1/services/?lang=en', '/api/v1/partners/'):
+            self.assertEqual(self.client.get(url, **host).status_code, 200, url)
+
+    def test_admin_has_no_gallery_but_keeps_projects(self):
+        from django.contrib.auth.models import User
+        self.client.force_login(User.objects.create_superuser('admin', 'a@a.uz', 'x'))
+        host = {'HTTP_HOST': '127.0.0.1'}
+        self.assertEqual(self.client.get('/admin/apps/gallery/', **host).status_code, 404)
+        self.assertEqual(self.client.get('/admin/apps/gallerygroup/', **host).status_code, 404)
+        index = self.client.get('/admin/', **host).content.decode()
+        self.assertNotIn('/admin/apps/gallery', index)
+        self.assertIn('/admin/apps/project/', index)
+
+    def test_models_are_removed(self):
+        from django.apps import apps as django_apps
+        names = {model.__name__ for model in django_apps.get_app_config('apps').get_models()}
+        self.assertFalse({'Gallery', 'GalleryGroup'} & names)
+        self.assertIn('ProjectPhoto', names)

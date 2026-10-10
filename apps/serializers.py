@@ -4,21 +4,8 @@ from django.conf import settings
 from django.utils.html import strip_tags
 from rest_framework.serializers import EmailField, ValidationError, BooleanField, ModelSerializer, CharField, ImageField, SerializerMethodField
 
-from apps.models import Gallery, SiteSetting, Partner, Service, ServiceWork, ContactForm, ClientEmail, GalleryGroup, \
-    Project, ProjectPhoto
+from apps.models import SiteSetting, Partner, Service, ServiceWork, ContactForm, ClientEmail, Project, ProjectPhoto
 
-
-class GalleryGroupSerializer(ModelSerializer):
-    class Meta:
-        model = GalleryGroup
-        fields = ['id', 'media_type', 'image', 'thumbnail', 'video', 'video_url', 'duration']
-
-class GallerySerializer(ModelSerializer):
-    same_images = GalleryGroupSerializer(many=True, read_only=True)
-
-    class Meta:
-        model = Gallery
-        fields = ['id', 'media_type', 'image', 'thumbnail', 'video', 'video_url', 'duration', 'same_images']
 
 class SiteSettingSerializer(ModelSerializer):
     class Meta:

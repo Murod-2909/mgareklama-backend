@@ -22,30 +22,6 @@ class Banner(OptimizedImageModel):
         verbose_name_plural = _("Banners")
 
 
-class Gallery(OptimizedMediaModel):
-    image = ImageField(upload_to='images/%Y/%m/%d', verbose_name=_("Image"), blank=True,
-                       help_text=_("Upload an image or a video. For a video the poster is created automatically; upload an image only to use your own poster."))
-
-    class Meta:
-        verbose_name = _("Gallery")
-        verbose_name_plural = _("Galleries")
-
-    def __str__(self):
-        return f"Gallery {self.pk}"
-
-class GalleryGroup(OptimizedMediaModel):
-    image = ImageField(upload_to='images/%Y/%m/%d', verbose_name=_("Image"), blank=True,
-                       help_text=_("Upload an image or a video. For a video the poster is created automatically; upload an image only to use your own poster."))
-    gallery = ForeignKey('apps.Gallery', verbose_name=_("Gallery"), related_name='same_images', on_delete=CASCADE)
-
-    class Meta:
-        verbose_name = _("Gallery Additional Image")
-        verbose_name_plural = _("Gallery Additional Images")
-
-    def __str__(self):
-        return f"Image for Gallery {self.gallery.pk}"
-
-
 class SiteSetting(OptimizedImageModel):
     image_field = 'banner'
     main_max_side = 1920
@@ -241,8 +217,6 @@ class ProjectPhoto(OptimizedMediaModel):
         return f"Photo {self.pk} for project {self.project_id}"
 
 
-@receiver(post_delete, sender=Gallery)
-@receiver(post_delete, sender=GalleryGroup)
 @receiver(post_delete, sender=ProjectPhoto)
 def delete_video_file(sender, instance, **kwargs):
     if instance.video:
