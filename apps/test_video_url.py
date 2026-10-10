@@ -1,12 +1,11 @@
-from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
 from django.utils import translation
 from PIL import Image
 
-from apps.models import Gallery, GalleryGroup, Project, ProjectPhoto
-from apps.test_video import HOST, VideoTestCase, png_upload, upload
+from apps.models import Project, ProjectPhoto
+from apps.test_video import HOST, PHOTO_KEYS, VideoTestCase, png_upload, upload
 
 VALID = [
     'https://www.instagram.com/reel/C1a2B3c4D5e/',
@@ -73,21 +72,25 @@ INVALID = [
 ]
 
 
+def check(**fields):
+    ProjectPhoto(**fields).full_clean(exclude=['project'])
+
+
 class VideoLinkValidationTests(VideoTestCase):
     def test_valid_links_are_accepted(self):
         for url in VALID:
             with self.subTest(url):
-                Gallery(video_url=url).full_clean()
+                check(video_url=url)
 
     def test_other_sites_and_tricks_are_rejected(self):
         for url in INVALID:
             with self.subTest(url), self.assertRaises(ValidationError):
-                Gallery(video_url=url).full_clean()
+                check(video_url=url)
 
     def test_youtube_channels_playlists_and_home_are_rejected(self):
         for url in YOUTUBE_NOT_A_VIDEO:
             with self.subTest(url), self.assertRaises(ValidationError) as ctx:
-                Gallery(video_url=url).full_clean()
+                check(video_url=url)
             self.assertIn('Enter a link to a specific YouTube video.', str(ctx.exception))
 
     def test_youtube_message_is_translated(self):
@@ -95,7 +98,7 @@ class VideoLinkValidationTests(VideoTestCase):
                                    ('ru', "Укажите ссылку на конкретное видео на YouTube")):
             with translation.override(language):
                 try:
-                    Gallery(video_url='https://www.youtube.com/@mgareklama').full_clean()
+                    check(video_url='https://www.youtube.com/@mgareklama')
                 except ValidationError as error:
                     text = str(error)
                 else:
@@ -103,13 +106,12 @@ class VideoLinkValidationTests(VideoTestCase):
             self.assertIn(expected, text)
 
     def test_nothing_at_all_is_rejected_but_each_alone_is_fine(self):
-        for model in (Gallery, GalleryGroup, ProjectPhoto):
-            with self.subTest(model.__name__), self.assertRaises(ValidationError) as ctx:
-                model().full_clean(exclude=['gallery', 'project'])
-            self.assertIn('Upload an image or a video, or add a video link', str(ctx.exception))
-        Gallery(image=png_upload()).full_clean()
-        Gallery(video=upload(self.mp4)).full_clean()
-        Gallery(video_url=VALID[0]).full_clean()
+        with self.assertRaises(ValidationError) as ctx:
+            check()
+        self.assertIn('Upload an image or a video, or add a video link', str(ctx.exception))
+        check(image=png_upload())
+        check(video=upload(self.mp4))
+        check(video_url=VALID[0])
 
     def test_error_messages_are_translated(self):
         for language, expected in (('uz', "Faqat Instagram va YouTube havolalariga ruxsat beriladi"),
@@ -117,7 +119,7 @@ class VideoLinkValidationTests(VideoTestCase):
                                    ('en', "Only Instagram and YouTube links are allowed")):
             with translation.override(language):
                 try:
-                    Gallery(video_url='https://vimeo.com/1').full_clean()
+                    check(video_url='https://vimeo.com/1')
                 except ValidationError as error:
                     text = str(error)
                 else:
@@ -125,54 +127,48 @@ class VideoLinkValidationTests(VideoTestCase):
             self.assertIn(expected, text)
 
     def test_file_and_link_together_is_allowed_and_file_wins(self):
-        gallery = Gallery(video=upload(self.mp4), video_url=VALID[0])
-        gallery.full_clean()
-        gallery.save()
-        self.assertEqual((gallery.media_type, gallery.duration), ('video', 5))
-        self.assertTrue(gallery.video.name.endswith('.mp4'))
-        self.assertEqual(gallery.video_url, VALID[0])
+        photo = self.new_photo(video=upload(self.mp4), video_url=VALID[0])
+        photo.full_clean()
+        photo.save()
+        self.assertEqual((photo.media_type, photo.duration), ('video', 5))
+        self.assertTrue(photo.video.name.endswith('.mp4'))
+        self.assertEqual(photo.video_url, VALID[0])
 
 
 class VideoLinkApiTests(VideoTestCase):
-    def api(self, url='/api/v1/images/'):
+    def api(self, url):
         return self.client.get(url, **HOST).json()
 
     def test_link_only_item(self):
-        Gallery.objects.create(video_url=VALID[0])
-        item = self.api()[0]
-        self.assertEqual(list(item), ['id', 'media_type', 'image', 'thumbnail', 'video', 'video_url', 'duration',
-                                      'same_images'])
+        self.new_photo(video_url=VALID[0]).save()
+        item = self.api_photos('holder')[0]
+        self.assertEqual(list(item), PHOTO_KEYS)
         self.assertEqual((item['media_type'], item['video_url'], item['video'], item['duration']),
                          ('video', VALID[0], None, None))
         self.assertIsNone(item['image'])
 
     def test_link_with_poster(self):
-        Gallery.objects.create(video_url=VALID[0], image=png_upload())
-        item = self.api()[0]
+        self.new_photo(video_url=VALID[0], image=png_upload()).save()
+        item = self.api_photos('holder')[0]
         self.assertEqual(item['media_type'], 'video')
         self.assertTrue(item['image'].endswith('.webp') and item['thumbnail'].endswith('.webp'))
 
     def test_image_items_have_empty_link(self):
-        Gallery.objects.create(image=png_upload())
-        item = self.api()[0]
+        self.new_photo(image=png_upload()).save()
+        item = self.api_photos('holder')[0]
         self.assertEqual((item['media_type'], item['video_url'], item['video']), ('image', '', None))
 
-    def test_same_images_expose_the_link(self):
-        gallery = Gallery.objects.create(image=png_upload())
-        GalleryGroup.objects.create(gallery=gallery, video_url=VALID[7])
-        group = self.api()[0]['same_images'][0]
-        self.assertEqual((group['media_type'], group['video_url']), ('video', VALID[7]))
-
     def test_removing_the_file_resets_duration(self):
-        gallery = Gallery.objects.create(video=upload(self.mp4), video_url=VALID[0])
-        self.assertEqual(gallery.duration, 5)
-        gallery.video = None
-        gallery.save()
-        gallery.refresh_from_db()
-        self.assertEqual((gallery.duration, gallery.media_type), (None, 'video'))
-        gallery.video_url = ''
-        gallery.save()
-        self.assertEqual(Gallery.objects.get().media_type, 'image')
+        photo = self.new_photo(video=upload(self.mp4), video_url=VALID[0])
+        photo.save()
+        self.assertEqual(photo.duration, 5)
+        photo.video = None
+        photo.save()
+        photo.refresh_from_db()
+        self.assertEqual((photo.duration, photo.media_type), (None, 'video'))
+        photo.video_url = ''
+        photo.save()
+        self.assertEqual(ProjectPhoto.objects.get().media_type, 'image')
 
     def test_has_video_counts_links(self):
         def make(slug, **photo):
@@ -201,46 +197,32 @@ class VideoLinkApiTests(VideoTestCase):
 
 
 class VideoLinkAdminTests(VideoTestCase):
-    def setUp(self):
-        self.client.force_login(User.objects.create_superuser('admin', 'a@a.uz', 'x'))
-
-    def add_gallery(self, **fields):
-        data = {'same_images-TOTAL_FORMS': '0', 'same_images-INITIAL_FORMS': '0', 'same_images-MIN_NUM_FORMS': '0',
-                'same_images-MAX_NUM_FORMS': '1000', '_save': 'Save', **fields}
-        return self.client.post('/admin/apps/gallery/add/', data, **HOST)
-
     def test_add_with_link_only(self):
-        self.assertEqual(self.add_gallery(video_url=VALID[0]).status_code, 302)
-        gallery = Gallery.objects.get()
-        self.assertEqual((gallery.media_type, gallery.video_url), ('video', VALID[0]))
+        self.assertEqual(self.add_photo_via_admin(video_url=VALID[0]).status_code, 302)
+        photo = ProjectPhoto.objects.get()
+        self.assertEqual((photo.media_type, photo.video_url), ('video', VALID[0]))
+        self.assertEqual(self.api_photos()[0]['video_url'], VALID[0])
 
     def test_add_with_link_and_poster(self):
-        self.assertEqual(self.add_gallery(video_url=VALID[0], image=png_upload()).status_code, 302)
-        gallery = Gallery.objects.get()
-        with Image.open(gallery.image.path) as im:
+        self.assertEqual(self.add_photo_via_admin(video_url=VALID[0], image=png_upload()).status_code, 302)
+        with Image.open(ProjectPhoto.objects.get().image.path) as im:
             self.assertEqual(im.format, 'WEBP')
 
     def test_bad_link_shows_error(self):
-        response = self.add_gallery(video_url='https://vimeo.com/1')
+        response = self.add_photo_via_admin(video_url='https://vimeo.com/1')
         self.assertEqual(response.status_code, 200)
         self.assertIn('Only Instagram and YouTube links are allowed', response.content.decode())
-        self.assertEqual(Gallery.objects.count(), 0)
+        self.assertEqual(ProjectPhoto.objects.count(), 0)
 
-    def test_empty_form_error_mentions_link(self):
-        self.assertIn('add a video link', self.add_gallery().content.decode())
+    def test_empty_photo_error_mentions_link(self):
+        self.assertIn('add a video link', self.add_photo_via_admin(order='1').content.decode())
 
-    def test_inline_accepts_link(self):
-        gallery = Gallery.objects.create(image=png_upload())
-        response = self.client.post(f'/admin/apps/gallery/{gallery.pk}/change/', {
-            'same_images-TOTAL_FORMS': '1', 'same_images-INITIAL_FORMS': '0', 'same_images-MIN_NUM_FORMS': '0',
-            'same_images-MAX_NUM_FORMS': '1000', 'same_images-0-video_url': VALID[0], '_save': 'Save'}, **HOST)
-        self.assertEqual(response.status_code, 302, response.content.decode()[:300])
-        self.assertEqual(gallery.same_images.get().media_type, 'video')
-
-    def test_form_and_preview_show_the_link(self):
-        gallery = Gallery.objects.create(video_url=VALID[0])
-        change = self.client.get(f'/admin/apps/gallery/{gallery.pk}/change/', **HOST).content.decode()
-        self.assertIn('name="video_url"', change)
+    def test_project_form_shows_the_link_field_and_preview(self):
+        self.add_photo_via_admin(video_url=VALID[0])
+        project = Project.objects.get()
+        change = self.client.get(f'/admin/apps/project/{project.pk}/change/?language=en', **HOST).content.decode()
+        self.assertIn('name="photos-0-video_url"', change)
+        self.assertIn('name="photos-0-video"', change)
+        self.assertIn('name="photos-0-image"', change)
         self.assertIn('Instagram or YouTube link', change)
-        listing = self.client.get('/admin/apps/gallery/', **HOST).content.decode()
-        self.assertIn(f'href="{VALID[0]}"', listing)
+        self.assertIn(f'href="{VALID[0]}"', change)

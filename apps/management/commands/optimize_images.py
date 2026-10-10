@@ -1,10 +1,10 @@
 from django.core.management.base import BaseCommand, CommandError
 
 from apps.image_utils import build_variants
-from apps.models import Banner, Gallery, GalleryGroup, Partner, Project, ProjectPhoto, Service, ServiceWork, SiteSetting
+from apps.models import Banner, Partner, Project, ProjectPhoto, Service, ServiceWork, SiteSetting
 
 
-MODELS = (Gallery, GalleryGroup, Service, ServiceWork, Partner, Banner, SiteSetting, Project, ProjectPhoto)
+MODELS = (Service, ServiceWork, Partner, Banner, SiteSetting, Project, ProjectPhoto)
 
 
 def is_referenced(name):
@@ -17,7 +17,7 @@ def is_referenced(name):
 
 
 class Command(BaseCommand):
-    help = "Convert existing Gallery/GalleryGroup/ServiceWork/Partner/Banner/SiteSetting/Project/ProjectPhoto images to optimized WebP, create thumbnails, delete old files."
+    help = "Convert existing Service/ServiceWork/Partner/Banner/SiteSetting/Project/ProjectPhoto images to optimized WebP, create thumbnails, delete old files."
 
     def add_arguments(self, parser):
         parser.add_argument('--force', action='store_true', help="Reprocess images that are already optimized.")
