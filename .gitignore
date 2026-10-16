@@ -16,3 +16,8 @@ __pycache__/
 .env
 *.sqlite3
 .DS_Store
+
+# local backups / dumps
+gallery_backup.json
+media_backup/
+*.bak
