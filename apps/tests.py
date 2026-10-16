@@ -86,7 +86,7 @@ class ServiceTests(TestCase):
         service.set_current_language('en')
         service.title = 'UV Printing'
         service.save()
-        data = self.client.get('/api/v1/services/?lang=en', HTTP_HOST='127.0.0.1').json()[0]
+        data = self.client.get('/api/v1/services/?lang=en', HTTP_HOST='testserver').json()[0]
         self.assertEqual(list(data), ['id', 'slug', 'title', 'description', 'image', 'thumbnail', 'works'])
         self.assertEqual(data['slug'], 'uv-printing')
 
@@ -121,7 +121,7 @@ class FixServiceTitlesMigrationTests(TestCase):
         return service
 
     def titles(self, lang):
-        return {s['slug']: s['title'] for s in self.client.get(f'/api/v1/services/?lang={lang}', HTTP_HOST='127.0.0.1').json()}
+        return {s['slug']: s['title'] for s in self.client.get(f'/api/v1/services/?lang={lang}', HTTP_HOST='testserver').json()}
 
     def test_wrong_titles_are_fixed_and_custom_ones_kept(self):
         from django.apps import apps
@@ -157,7 +157,7 @@ class FixServiceTitlesMigrationTests(TestCase):
 
 class GalleryRemovedTests(TestCase):
     def test_images_endpoint_is_gone_and_others_still_work(self):
-        host = {'HTTP_HOST': '127.0.0.1'}
+        host = {'HTTP_HOST': 'testserver'}
         self.assertEqual(self.client.get('/api/v1/images/', **host).status_code, 404)
         for url in ('/api/v1/projects/?lang=en', '/api/v1/services/?lang=en', '/api/v1/partners/'):
             self.assertEqual(self.client.get(url, **host).status_code, 200, url)
@@ -165,7 +165,7 @@ class GalleryRemovedTests(TestCase):
     def test_admin_has_no_gallery_but_keeps_projects(self):
         from django.contrib.auth.models import User
         self.client.force_login(User.objects.create_superuser('admin', 'a@a.uz', 'x'))
-        host = {'HTTP_HOST': '127.0.0.1'}
+        host = {'HTTP_HOST': 'testserver'}
         self.assertEqual(self.client.get('/admin/apps/gallery/', **host).status_code, 404)
         self.assertEqual(self.client.get('/admin/apps/gallerygroup/', **host).status_code, 404)
         index = self.client.get('/admin/', **host).content.decode()

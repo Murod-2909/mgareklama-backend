@@ -1,6 +1,8 @@
 import os
 from pathlib import Path
 
+from django.core.exceptions import ImproperlyConfigured
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
@@ -15,13 +17,21 @@ def _load_env_file(path):
         os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
 
 
-_load_env_file(BASE_DIR / '.env')
+# Production: systemd EnvironmentFile=/etc/mgareklama/backend.env. Local development: .env next to manage.py.
+_load_env_file(Path(os.environ.get('DJANGO_ENV_FILE', BASE_DIR / '.env')))
 
-SECRET_KEY = ' django-insecure-^&%i)+!!zfe^-$btu07$^8!pdqtw+v-8g=xle66-z00te1a)l)'
 
-DEBUG = True
+def _env_list(name):
+    return [item.strip() for item in os.environ.get(name, '').split(',') if item.strip()]
 
-ALLOWED_HOSTS = ['api.mgareklama.com', 'https://mgareklama.com', '*']
+try:
+    SECRET_KEY = os.environ['DJANGO_SECRET_KEY']
+except KeyError:
+    raise ImproperlyConfigured("Set the DJANGO_SECRET_KEY environment variable (see .env.example).") from None
+
+DEBUG = os.environ.get('DJANGO_DEBUG', '0').lower() in ('1', 'true', 'yes')
+
+ALLOWED_HOSTS = _env_list('DJANGO_ALLOWED_HOSTS') or (['localhost', '127.0.0.1', '[::1]'] if DEBUG else [])
 
 INSTALLED_APPS = [
     'jazzmin',
@@ -70,7 +80,7 @@ REST_FRAMEWORK = {
 
 ROOT_URLCONF = 'root.urls'
 
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = False
 
 TEMPLATES = [
     {
@@ -113,10 +123,23 @@ CORS_ALLOW_HEADERS = [
 ]
 
 CORS_ALLOWED_ORIGINS = [
+    "https://mgareklama.com",
+    "https://www.mgareklama.com",
+    *(["http://localhost:3000"] if DEBUG else []),
+    *_env_list('DJANGO_CORS_EXTRA_ORIGINS'),
+]
+
+CSRF_TRUSTED_ORIGINS = [
     "https://api.mgareklama.com",
     "https://mgareklama.com",
-    "http://localhost:3000"
 ]
+
+if not DEBUG:
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    # nginx terminates TLS and must send X-Forwarded-Proto; SECURE_SSL_REDIRECT stays off (nginx redirects)
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_CONTENT_TYPE_NOSNIFF = True
 
 AUTH_PASSWORD_VALIDATORS = [
     {
