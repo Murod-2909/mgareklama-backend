@@ -22,7 +22,7 @@ TEMP_MEDIA = tempfile.mkdtemp()
 SAMPLES = tempfile.mkdtemp()
 atexit.register(shutil.rmtree, TEMP_MEDIA, ignore_errors=True)
 atexit.register(shutil.rmtree, SAMPLES, ignore_errors=True)
-HOST = {'HTTP_HOST': '127.0.0.1'}
+HOST = {'HTTP_HOST': 'testserver'}
 
 
 def ffmpeg(*args):
@@ -105,7 +105,7 @@ class AdminVideoUploadTests(VideoTestCase):
         self.assertEqual(response.status_code, 302, getattr(response, 'context', None) and response.context['errors'])
         item = self.api_photos()[0]
         self.assertEqual(item['media_type'], 'video')
-        self.assertTrue(item['video'].startswith('http://127.0.0.1') and item['video'].endswith('.mp4'))
+        self.assertTrue(item['video'].startswith('http://testserver') and item['video'].endswith('.mp4'))
         self.assertTrue(item['image'].endswith('.webp') and item['thumbnail'].endswith('.webp'))
         self.assertEqual(item['duration'], 5)
         self.assertEqual(list(item), PHOTO_KEYS)

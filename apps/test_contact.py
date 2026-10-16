@@ -10,7 +10,7 @@ from django.test import TestCase, override_settings
 
 from apps.models import ClientEmail, ContactForm
 
-HOST = {'HTTP_HOST': '127.0.0.1'}
+HOST = {'HTTP_HOST': 'testserver'}
 CONTACT = '/api/v1/create-contact/'
 SUBSCRIBE = '/api/v1/create-email/'
 BASE = {'name': 'Ali', 'email': 'ali@example.com', 'message': 'Hello'}

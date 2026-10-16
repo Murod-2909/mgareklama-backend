@@ -2,6 +2,8 @@ import re
 
 from django.conf import settings
 from django.utils.html import strip_tags
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema_field
 from rest_framework.serializers import EmailField, ValidationError, BooleanField, ModelSerializer, CharField, ImageField, SerializerMethodField
 
 from apps.models import SiteSetting, Partner, Service, ServiceWork, ContactForm, ClientEmail, Project, ProjectPhoto
@@ -109,6 +111,7 @@ class ProjectListSerializer(ModelSerializer):
         fields = ('id', 'slug', 'title', 'location', 'year', 'category',
                   'cover', 'cover_thumbnail', 'photos_count', 'has_video')
 
+    @extend_schema_field(OpenApiTypes.INT)
     def get_photos_count(self, obj):
         return len(obj.photos.all())
 
